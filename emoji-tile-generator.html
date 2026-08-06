@@ -1,0 +1,997 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tile Loom — Emoji Border Generator</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
+
+  :root{
+    --bg-shell:   #150f1a;
+    --bg-panel:   #1e1522;
+    --bg-panel-2: #241a29;
+    --bg-raised:  #2b1f31;
+    --line:       #3a2a44;
+    --line-soft:  #2c2032;
+    --text:       #f3ece4;
+    --text-dim:   #b9aab8;
+    --text-faint: #7d6c7c;
+    --accent:     #e8a33d;
+    --accent-dim: #a97a33;
+    --rose:       #c6577a;
+    --teal:       #4d9a92;
+    --danger:     #d15b5b;
+  }
+
+  *{ box-sizing:border-box; }
+  html,body{ height:100%; }
+  body{
+    margin:0;
+    background:var(--bg-shell);
+    color:var(--text);
+    font-family:'Inter',sans-serif;
+    font-size:13px;
+    overflow:hidden;
+  }
+  ::selection{ background:var(--accent); color:#1a1025; }
+  ::-webkit-scrollbar{ width:9px; height:9px; }
+  ::-webkit-scrollbar-thumb{ background:var(--line); border-radius:5px; }
+  ::-webkit-scrollbar-track{ background:transparent; }
+
+  input[type=text], input[type=number], select{
+    background:var(--bg-shell);
+    border:1px solid var(--line);
+    color:var(--text);
+    border-radius:6px;
+    padding:6px 8px;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:12px;
+    width:100%;
+  }
+  input[type=text]:focus, input[type=number]:focus, select:focus{
+    outline:none; border-color:var(--accent);
+  }
+  input[type=color]{
+    -webkit-appearance:none; appearance:none;
+    width:34px; height:28px; border:1px solid var(--line); border-radius:6px;
+    background:none; padding:0; cursor:pointer;
+  }
+  input[type=color]::-webkit-color-swatch-wrapper{ padding:2px; }
+  input[type=color]::-webkit-color-swatch{ border:none; border-radius:4px; }
+
+  input[type=range]{
+    -webkit-appearance:none; appearance:none;
+    width:100%; height:4px; border-radius:2px;
+    background:var(--line); outline:none;
+  }
+  input[type=range]::-webkit-slider-thumb{
+    -webkit-appearance:none; appearance:none;
+    width:14px; height:14px; border-radius:50%;
+    background:var(--accent); cursor:pointer; border:2px solid #1a1025;
+    margin-top:-5px;
+  }
+
+  button{
+    font-family:'Inter',sans-serif;
+    cursor:pointer;
+    border:1px solid var(--line);
+    background:var(--bg-raised);
+    color:var(--text);
+    border-radius:6px;
+    padding:6px 10px;
+    font-size:12px;
+    transition:border-color .12s, background .12s;
+  }
+  button:hover{ border-color:var(--accent); }
+  button.primary{ background:var(--accent); color:#1a1025; border-color:var(--accent); font-weight:600; }
+  button.primary:hover{ background:#f0b559; }
+  button.ghost{ background:transparent; border-color:transparent; }
+  button.ghost:hover{ background:var(--bg-raised); border-color:var(--line); }
+  button.icon{ width:28px; height:28px; padding:0; display:inline-flex; align-items:center; justify-content:center; }
+  button:disabled{ opacity:.35; cursor:default; }
+  button:disabled:hover{ border-color:var(--line); }
+
+  label.field{ display:block; margin-bottom:12px; }
+  .field-label{
+    display:flex; justify-content:space-between; align-items:center;
+    font-size:11px; color:var(--text-dim); margin-bottom:6px;
+    text-transform:uppercase; letter-spacing:.06em;
+  }
+  .field-label .val{ font-family:'IBM Plex Mono',monospace; color:var(--accent); font-size:11px; text-transform:none; letter-spacing:0; }
+  .row2{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .row3{ display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; }
+
+  /* ---------- shell ---------- */
+  #app{ display:flex; flex-direction:column; height:100vh; }
+
+  #topbar{
+    height:52px; flex:none; display:flex; align-items:center; gap:14px;
+    padding:0 16px; background:var(--bg-panel); border-bottom:1px solid var(--line);
+  }
+  .brand{ display:flex; align-items:center; gap:9px; margin-right:6px; }
+  .brand .mark{ font-size:20px; }
+  .brand .name{ font-family:'Fraunces',serif; font-weight:700; font-size:17px; letter-spacing:.01em; }
+  .brand .sub{ font-size:10px; color:var(--text-faint); letter-spacing:.08em; text-transform:uppercase; margin-top:-2px; display:block; }
+  .topbar-group{ display:flex; align-items:center; gap:6px; }
+  .topbar-sep{ width:1px; height:24px; background:var(--line); margin:0 4px; }
+  .spacer{ flex:1; }
+
+  #main{ flex:1; display:flex; min-height:0; }
+
+  #leftpanel{
+    width:250px; flex:none; background:var(--bg-panel); border-right:1px solid var(--line);
+    display:flex; flex-direction:column; min-height:0;
+  }
+  #rightpanel{
+    width:308px; flex:none; background:var(--bg-panel); border-left:1px solid var(--line);
+    display:flex; flex-direction:column; min-height:0;
+  }
+  .panel-head{
+    padding:12px 14px; border-bottom:1px solid var(--line);
+    display:flex; align-items:center; justify-content:space-between;
+  }
+  .panel-title{ font-size:11px; text-transform:uppercase; letter-spacing:.08em; color:var(--text-dim); font-weight:600; }
+  .panel-scroll{ flex:1; overflow-y:auto; padding:10px; min-height:0; }
+
+  /* canvas stage */
+  #stage{
+    flex:1; position:relative; display:flex; align-items:center; justify-content:center;
+    background:
+      linear-gradient(var(--line-soft) 1px, transparent 1px),
+      linear-gradient(90deg, var(--line-soft) 1px, transparent 1px);
+    background-size:24px 24px;
+    background-color:#100b14;
+  }
+  #canvasWrap{
+    box-shadow:0 30px 80px -20px rgba(0,0,0,.7), 0 0 0 1px var(--line);
+    border-radius:2px; overflow:hidden; background:#000;
+  }
+  #mainCanvas{ display:block; width:min(64vh,64vw); height:min(64vh,64vw); }
+  #stage-hint{
+    position:absolute; bottom:14px; left:50%; transform:translateX(-50%);
+    font-family:'IBM Plex Mono',monospace; font-size:11px; color:var(--text-faint);
+    background:rgba(21,15,26,.7); padding:4px 10px; border-radius:20px; border:1px solid var(--line);
+  }
+
+  /* layers */
+  .layer-row{
+    display:flex; align-items:center; gap:8px;
+    padding:8px 8px; border-radius:8px; margin-bottom:5px;
+    border:1px solid transparent; background:var(--bg-panel-2);
+    cursor:grab;
+  }
+  .layer-row.selected{ border-color:var(--accent); background:#2c2018; }
+  .layer-row.hidden-layer{ opacity:.4; }
+  .layer-row .chip{
+    width:30px; height:30px; border-radius:7px; background:var(--bg-shell);
+    display:flex; align-items:center; justify-content:center; font-size:16px; flex:none;
+    border:1px solid var(--line);
+  }
+  .layer-row .info{ flex:1; min-width:0; }
+  .layer-row .info .t1{ font-size:12px; font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .layer-row .info .t2{ font-size:10px; color:var(--text-faint); font-family:'IBM Plex Mono',monospace; }
+  .layer-row .acts{ display:flex; gap:2px; flex:none; }
+  .layer-row .acts button{ width:22px; height:22px; font-size:11px; }
+  .layer-row.dragover{ border-color:var(--rose); }
+
+  .center-decor-row{
+    padding:9px 10px; border-radius:8px; background:var(--bg-panel-2);
+    border:1px solid var(--line-soft); margin-bottom:5px; cursor:pointer;
+  }
+  .center-decor-row.selected{ border-color:var(--accent); background:#2c2018; }
+  .center-decor-row .t1{ font-size:12px; font-weight:600; display:flex; align-items:center; gap:6px; }
+
+  #addBorderBtn{ width:100%; margin-bottom:10px; }
+
+  /* right panel tabs */
+  .tabs{ display:flex; gap:2px; padding:8px 10px 0; border-bottom:1px solid var(--line); }
+  .tab{
+    flex:1; text-align:center; padding:8px 4px; font-size:11px; color:var(--text-dim);
+    border-bottom:2px solid transparent; cursor:pointer; text-transform:uppercase; letter-spacing:.04em;
+  }
+  .tab.active{ color:var(--accent); border-bottom-color:var(--accent); }
+  .section-title{
+    font-family:'Fraunces',serif; font-size:14px; font-weight:600; margin:4px 0 12px;
+    color:var(--text); display:flex; align-items:center; gap:8px;
+  }
+  .section-title .dot{ width:7px; height:7px; border-radius:50%; background:var(--accent); }
+  .empty-state{ padding:30px 14px; text-align:center; color:var(--text-faint); font-size:12px; line-height:1.6; }
+
+  .btn-toggle-group{ display:flex; gap:4px; flex-wrap:wrap; }
+  .btn-toggle{ flex:1; min-width:64px; font-size:11px; padding:6px 4px; text-align:center; }
+  .btn-toggle.active{ background:var(--accent); color:#1a1025; border-color:var(--accent); font-weight:600; }
+
+  .emoji-input-row{ display:flex; gap:8px; align-items:center; }
+  .emoji-input-row .emoji-display{
+    width:40px; height:36px; border-radius:7px; border:1px solid var(--line); background:var(--bg-shell);
+    display:flex; align-items:center; justify-content:center; font-size:19px; flex:none; cursor:pointer;
+  }
+  .emoji-palette{
+    display:grid; grid-template-columns:repeat(9,1fr); gap:3px; margin-top:8px;
+    max-height:120px; overflow-y:auto; padding:6px; background:var(--bg-shell); border-radius:7px; border:1px solid var(--line);
+  }
+  .emoji-palette button{ padding:4px; font-size:15px; border:none; background:transparent; }
+  .emoji-palette button:hover{ background:var(--bg-raised); border-radius:5px; }
+
+  .toggle-switch{
+    width:34px; height:19px; border-radius:20px; background:var(--line); position:relative; cursor:pointer; flex:none; border:1px solid var(--line);
+  }
+  .toggle-switch.on{ background:var(--accent-dim); border-color:var(--accent); }
+  .toggle-switch::after{
+    content:''; position:absolute; top:2px; left:2px; width:13px; height:13px; border-radius:50%;
+    background:#e9e0e4; transition:left .15s;
+  }
+  .toggle-switch.on::after{ left:17px; background:#1a1025; }
+
+  .preset-grid{ display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-bottom:14px; }
+  .preset-btn{ font-size:11px; padding:9px 6px; text-align:center; line-height:1.3; }
+  .preset-btn .pe{ font-size:15px; display:block; margin-bottom:3px; }
+
+  .divider{ height:1px; background:var(--line); margin:16px 0; }
+  .helptext{ font-size:11px; color:var(--text-faint); margin-top:-6px; margin-bottom:12px; line-height:1.5; }
+
+  .chip-list{ display:flex; flex-wrap:wrap; gap:5px; margin-top:8px; }
+  .chip-list .chip-item{
+    display:flex; align-items:center; gap:4px; background:var(--bg-shell); border:1px solid var(--line);
+    border-radius:14px; padding:3px 6px 3px 9px; font-size:13px;
+  }
+  .chip-item button{ width:16px; height:16px; padding:0; border:none; background:transparent; font-size:10px; color:var(--text-faint); }
+
+  #fileInput{ display:none; }
+</style>
+</head>
+<body>
+
+<div id="app">
+
+  <div id="topbar">
+    <div class="brand">
+      <span class="mark">◈</span>
+      <div>
+        <div class="name">Tile Loom</div>
+        <span class="sub">Emoji Border Generator</span>
+      </div>
+    </div>
+    <div class="topbar-sep"></div>
+    <div class="topbar-group">
+      <button class="icon ghost" id="undoBtn" title="Undo">↶</button>
+      <button class="icon ghost" id="redoBtn" title="Redo">↷</button>
+    </div>
+    <div class="topbar-sep"></div>
+    <div class="topbar-group">
+      <button id="randomizeBtn">🎲 Randomize</button>
+      <button id="savePresetBtn">Save JSON</button>
+      <button id="loadPresetBtn">Load JSON</button>
+      <input type="file" id="fileInput" accept="application/json">
+    </div>
+    <div class="spacer"></div>
+    <div class="topbar-group">
+      <select id="exportScale" style="width:78px;">
+        <option value="1">1×</option>
+        <option value="2" selected>2×</option>
+        <option value="4">4×</option>
+      </select>
+      <button class="primary" id="exportBtn">Export PNG</button>
+    </div>
+  </div>
+
+  <div id="main">
+
+    <div id="leftpanel">
+      <div class="panel-head">
+        <span class="panel-title">Layers</span>
+        <span style="font-size:10px;color:var(--text-faint)" id="layerCount">0 borders</span>
+      </div>
+      <div class="panel-scroll">
+        <button id="addBorderBtn">+ Add Border Layer</button>
+        <div id="layerList"></div>
+        <div class="divider"></div>
+        <div id="centerRow" class="center-decor-row">
+          <div class="t1">◎ Center Composition</div>
+        </div>
+        <div id="decorRow" class="center-decor-row">
+          <div class="t1">✨ Floating Decorations</div>
+        </div>
+        <div id="canvasRow" class="center-decor-row">
+          <div class="t1">▦ Canvas &amp; Background</div>
+        </div>
+      </div>
+    </div>
+
+    <div id="stage">
+      <div id="canvasWrap"><canvas id="mainCanvas" width="800" height="800"></canvas></div>
+      <div id="stage-hint">click a layer on the left to edit it →</div>
+    </div>
+
+    <div id="rightpanel">
+      <div class="panel-head">
+        <span class="panel-title" id="rightTitle">Properties</span>
+      </div>
+      <div class="panel-scroll" id="propPanel"></div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+/* =================== helpers =================== */
+function uid(){ return Math.random().toString(36).slice(2,9); }
+function mulberry32(a){
+  return function(){
+    a |= 0; a = a + 0x6D2B79F5 | 0;
+    let t = Math.imul(a ^ a >>> 15, 1 | a);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  }
+}
+function clamp(v,a,b){ return Math.max(a,Math.min(b,v)); }
+function pick(rng, arr){ return arr[Math.floor(rng()*arr.length)]; }
+
+const EMOJI_POOL = ["🟩","🟦","🟥","🟨","🟪","◻️","◼️","⬛","⬜","🔶","🔷","🔺","🔻","♦️","🔘",
+  "🌸","🌺","🌼","🌷","🌻","🌹","🌿","🍃","🌵","🪷",
+  "🍌","🍉","🍒","🍋","🍇","🍓","🍑","🍍","🥭","🍊",
+  "🌙","⭐","✨","🌟","☀️","🌈","☁️","⚡","❄️","🔥",
+  "🦋","🐆","🐍","🐚","🐬","🦜","🐝","🐞","🦢","🐠",
+  "💎","💠","🧿","🎀","💋","🎭","🪩","💫","🔮","🎪"];
+
+const DECOR_DEFAULTS = ["✨","⭐","🌙"];
+
+function defaultBorder(emoji, overrides){
+  return Object.assign({
+    id: uid(),
+    name: "",
+    emoji: emoji || "🟩",
+    cornerEmoji: "",
+    size: 32,
+    spacing: 4,
+    rotation: 0,
+    opacity: 1,
+    cornerMode: "repeat", // repeat | single | mirror | quarter | diagonal
+    pinwheel: false,
+    alternate: false,
+    hidden: false,
+  }, overrides || {});
+}
+
+function defaultState(){
+  return {
+    canvasSize: 800,
+    padding: 36,
+    bgType: "radial", // solid | linear | radial
+    bgColor1: "#2a1730",
+    bgColor2: "#150f1a",
+    bgAngle: 45,
+    grain: 12,
+    seed: 4242,
+    borders: [
+      defaultBorder("🟩", {size:30, spacing:4}),
+      defaultBorder("🌸", {size:26, spacing:5, cornerMode:"single", cornerEmoji:"✨"}),
+      defaultBorder("◻️", {size:22, spacing:6}),
+    ],
+    center: { mode:"single", emoji:"✨", clusterEmojis:["🌙","⭐","✨","🌟"], scale:1, rotation:0 },
+    decorations: { enabled:false, emojis:[...DECOR_DEFAULTS], density:18, scale:1, opacity:0.35 },
+  };
+}
+
+/* =================== presets =================== */
+const PRESETS = {
+  ottoman: { pe:"🕌", label:"Ottoman", borders:[
+      defaultBorder("🔷",{size:28,spacing:4,cornerMode:"quarter"}),
+      defaultBorder("✨",{size:20,spacing:6}),
+      defaultBorder("◻️",{size:26,spacing:4,cornerMode:"single",cornerEmoji:"🔶"}),
+    ], center:{mode:"single",emoji:"💠",scale:1,rotation:0} },
+  paisley: { pe:"🌀", label:"Paisley", borders:[
+      defaultBorder("🌀",{size:28,spacing:5,pinwheel:true}),
+      defaultBorder("🍃",{size:22,spacing:5,alternate:true}),
+      defaultBorder("🌸",{size:24,spacing:4}),
+    ], center:{mode:"single",emoji:"🌺",scale:1,rotation:0} },
+  bandana: { pe:"🔺", label:"Bandana", borders:[
+      defaultBorder("🔺",{size:26,spacing:3,cornerMode:"quarter"}),
+      defaultBorder("◆",{size:20,spacing:4}),
+      defaultBorder("🔻",{size:26,spacing:3,cornerMode:"quarter",rotation:180}),
+    ], center:{mode:"cluster",clusterEmojis:["🔺","🔻","🔺","🔻"],scale:1,rotation:0} },
+  scarf: { pe:"🧣", label:"Scarf", borders:[
+      defaultBorder("🌸",{size:26,spacing:5}),
+      defaultBorder("🍃",{size:20,spacing:5,pinwheel:true}),
+      defaultBorder("✨",{size:18,spacing:6}),
+    ], center:{mode:"single",emoji:"🌷",scale:1,rotation:0} },
+  kitsch: { pe:"💋", label:"Kitsch", borders:[
+      defaultBorder("🍒",{size:28,spacing:4}),
+      defaultBorder("💋",{size:22,spacing:6,alternate:true}),
+      defaultBorder("🎀",{size:24,spacing:5,cornerMode:"single",cornerEmoji:"💄"}),
+    ], center:{mode:"single",emoji:"💖",scale:1,rotation:0} },
+  glam: { pe:"💫", label:"Pierre et Gilles", borders:[
+      defaultBorder("🌹",{size:28,spacing:4}),
+      defaultBorder("✨",{size:18,spacing:5}),
+      defaultBorder("💫",{size:24,spacing:5,pinwheel:true}),
+    ], center:{mode:"cluster",clusterEmojis:["🌹","💫","✨","🕊️"],scale:1.1,rotation:0} },
+  fruit: { pe:"🍉", label:"Fruit", borders:[
+      defaultBorder("🍌",{size:30,spacing:3,rotation:20}),
+      defaultBorder("🍒",{size:22,spacing:5}),
+      defaultBorder("🍋",{size:26,spacing:4}),
+    ], center:{mode:"cluster",clusterEmojis:["🍉","🍇","🍓","🍑"],scale:1,rotation:0} },
+  flowers: { pe:"🌼", label:"Flowers", borders:[
+      defaultBorder("🌼",{size:28,spacing:4}),
+      defaultBorder("🌿",{size:18,spacing:5,pinwheel:true}),
+      defaultBorder("🌷",{size:24,spacing:5}),
+    ], center:{mode:"single",emoji:"🌻",scale:1,rotation:0} },
+  celestial: { pe:"🌙", label:"Celestial", borders:[
+      defaultBorder("⭐",{size:22,spacing:6}),
+      defaultBorder("🌙",{size:28,spacing:5,pinwheel:true}),
+      defaultBorder("✨",{size:16,spacing:7}),
+    ], center:{mode:"single",emoji:"☀️",scale:1.1,rotation:0} },
+  explosion: { pe:"💥", label:"Emoji Explosion", borders:[
+      defaultBorder("✨",{size:24,spacing:3}),
+      defaultBorder("🎉",{size:24,spacing:3,alternate:true}),
+      defaultBorder("💥",{size:24,spacing:3,pinwheel:true}),
+      defaultBorder("🌈",{size:22,spacing:3}),
+    ], center:{mode:"cluster",clusterEmojis:["🎉","💥","✨","🌟","🎊"],scale:1.1,rotation:0} },
+  minimal: { pe:"◻️", label:"Minimal", borders:[
+      defaultBorder("◻️",{size:20,spacing:10,opacity:.9}),
+    ], center:{mode:"single",emoji:"◻️",scale:.6,rotation:45} },
+  memphis: { pe:"🔷", label:"Memphis", borders:[
+      defaultBorder("🔺",{size:24,spacing:5,cornerMode:"quarter"}),
+      defaultBorder("⬛",{size:18,spacing:6,alternate:true}),
+      defaultBorder("🔵",{size:22,spacing:5,pinwheel:true}),
+    ], center:{mode:"cluster",clusterEmojis:["🔺","🔵","⬛","🔶"],scale:1,rotation:0} },
+  y2k: { pe:"💿", label:"Y2K", borders:[
+      defaultBorder("💿",{size:26,spacing:4,pinwheel:true}),
+      defaultBorder("💎",{size:20,spacing:5}),
+      defaultBorder("🦋",{size:24,spacing:5,alternate:true}),
+    ], center:{mode:"single",emoji:"💫",scale:1,rotation:0} },
+};
+
+/* =================== state =================== */
+let state = defaultState();
+let selection = { type:"border", id: state.borders[0].id }; // type: border | center | decor | canvas
+let history = [JSON.stringify(state)];
+let historyIndex = 0;
+let historyDebounce = null;
+
+function pushHistory(){
+  clearTimeout(historyDebounce);
+  historyDebounce = setTimeout(()=>{
+    const snap = JSON.stringify(state);
+    if(snap === history[historyIndex]) return;
+    history = history.slice(0, historyIndex+1);
+    history.push(snap);
+    historyIndex = history.length-1;
+    updateUndoRedoBtns();
+  }, 250);
+}
+function undo(){ if(historyIndex>0){ historyIndex--; state = JSON.parse(history[historyIndex]); normalizeSelection(); renderAll(); updateUndoRedoBtns(); } }
+function redo(){ if(historyIndex<history.length-1){ historyIndex++; state = JSON.parse(history[historyIndex]); normalizeSelection(); renderAll(); updateUndoRedoBtns(); } }
+function updateUndoRedoBtns(){
+  document.getElementById('undoBtn').disabled = historyIndex<=0;
+  document.getElementById('redoBtn').disabled = historyIndex>=history.length-1;
+}
+function normalizeSelection(){
+  if(selection.type==='border' && !state.borders.find(b=>b.id===selection.id)){
+    selection = state.borders.length ? {type:'border', id: state.borders[0].id} : {type:'canvas'};
+  }
+}
+
+/* =================== drawing =================== */
+function drawEmoji(ctx, char, cx, cy, size, rotation, opacity, flipX){
+  if(!char) return;
+  ctx.save();
+  ctx.globalAlpha = clamp(opacity,0,1);
+  ctx.translate(cx, cy);
+  ctx.rotate(rotation * Math.PI/180);
+  if(flipX) ctx.scale(-1,1);
+  ctx.font = size + 'px "Apple Color Emoji","Segoe UI Emoji","Noto Color Emoji",sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(char, 0, 0);
+  ctx.restore();
+}
+
+function drawRing(ctx, bounds, border){
+  const T = border.size + border.spacing;
+  const {x,y,s} = bounds;
+  if(border.hidden || T<=0 || s < T*2){
+    return { x:x+ (s>0?Math.min(T,s/2):0), y:y+(s>0?Math.min(T,s/2):0), s: Math.max(0, s - 2*Math.min(T,s/2)) };
+  }
+  const innerCount = Math.max(0, Math.floor((s - 2*T) / T));
+  const positions = [];
+  for(let i=0;i<innerCount;i++) positions.push({cx:x+T+T/2+i*T, cy:y+T/2, side:'top', idx:i});
+  for(let i=0;i<innerCount;i++) positions.push({cx:x+s-T/2, cy:y+T+T/2+i*T, side:'right', idx:i});
+  for(let i=0;i<innerCount;i++) positions.push({cx:x+s-T-T/2-i*T, cy:y+s-T/2, side:'bottom', idx:i});
+  for(let i=0;i<innerCount;i++) positions.push({cx:x+T/2, cy:y+s-T-T/2-i*T, side:'left', idx:i});
+
+  const sideRot = {top:0, right:90, bottom:180, left:270};
+  positions.forEach(p=>{
+    const rot = border.rotation + (border.pinwheel ? sideRot[p.side] : 0);
+    const flip = border.alternate && (p.idx % 2 === 1);
+    drawEmoji(ctx, border.emoji, p.cx, p.cy, border.size, rot, border.opacity, flip);
+  });
+
+  const corners = [
+    {cx:x+T/2,     cy:y+T/2,     i:0},
+    {cx:x+s-T/2,   cy:y+T/2,     i:1},
+    {cx:x+s-T/2,   cy:y+s-T/2,   i:2},
+    {cx:x+T/2,     cy:y+s-T/2,   i:3},
+  ];
+  corners.forEach(c=>{
+    let char = border.emoji, rot = border.rotation, flip = false;
+    if(border.cornerMode === 'single'){ char = border.cornerEmoji || border.emoji; rot = 0; }
+    else if(border.cornerMode === 'mirror'){ flip = c.i % 2 === 1; }
+    else if(border.cornerMode === 'quarter'){ rot = border.rotation + c.i*90; }
+    else if(border.cornerMode === 'diagonal'){ rot = border.rotation + c.i*90 + 45; char = border.cornerEmoji || border.emoji; }
+    drawEmoji(ctx, char, c.cx, c.cy, border.size, rot, border.opacity, flip);
+  });
+
+  return { x:x+T, y:y+T, s:s-2*T };
+}
+
+function drawCenter(ctx, bounds){
+  if(bounds.s <= 4) return;
+  const cx = bounds.x + bounds.s/2, cy = bounds.y + bounds.s/2;
+  const c = state.center;
+  const base = bounds.s * 0.78 * c.scale;
+  if(c.mode === 'single' || !c.clusterEmojis || c.clusterEmojis.length===0){
+    drawEmoji(ctx, c.emoji, cx, cy, base, c.rotation, 1, false);
+  } else {
+    const list = c.clusterEmojis;
+    const n = list.length;
+    const r = bounds.s * 0.24 * c.scale;
+    list.forEach((e,i)=>{
+      const ang = (i/n) * Math.PI*2 + c.rotation*Math.PI/180;
+      drawEmoji(ctx, e, cx + Math.cos(ang)*r, cy + Math.sin(ang)*r, base*0.42, 0, 1, false);
+    });
+  }
+}
+
+function drawBackground(ctx, size){
+  if(state.bgType === 'solid'){
+    ctx.fillStyle = state.bgColor1; ctx.fillRect(0,0,size,size);
+  } else if(state.bgType === 'linear'){
+    const rad = state.bgAngle * Math.PI/180;
+    const x1 = size/2 - Math.cos(rad)*size/2, y1 = size/2 - Math.sin(rad)*size/2;
+    const x2 = size/2 + Math.cos(rad)*size/2, y2 = size/2 + Math.sin(rad)*size/2;
+    const g = ctx.createLinearGradient(x1,y1,x2,y2);
+    g.addColorStop(0, state.bgColor1); g.addColorStop(1, state.bgColor2);
+    ctx.fillStyle = g; ctx.fillRect(0,0,size,size);
+  } else {
+    const g = ctx.createRadialGradient(size/2,size/2,0,size/2,size/2,size*0.72);
+    g.addColorStop(0, state.bgColor1); g.addColorStop(1, state.bgColor2);
+    ctx.fillStyle = g; ctx.fillRect(0,0,size,size);
+  }
+}
+
+function drawDecorations(ctx, size){
+  const d = state.decorations;
+  if(!d.enabled) return;
+  const rng = mulberry32(state.seed + 999);
+  const emojis = (d.emojis && d.emojis.length) ? d.emojis : DECOR_DEFAULTS;
+  const count = Math.round(d.density);
+  for(let i=0;i<count;i++){
+    const e = pick(rng, emojis);
+    const x = rng()*size, y = rng()*size;
+    const rot = rng()*360;
+    const sz = (18 + rng()*26) * d.scale;
+    drawEmoji(ctx, e, x, y, sz, rot, d.opacity, rng()>0.5);
+  }
+}
+
+function applyGrain(ctx, size){
+  const amt = state.grain;
+  if(amt<=0) return;
+  const tile = 64;
+  const off = document.createElement('canvas'); off.width=tile; off.height=tile;
+  const octx = off.getContext('2d');
+  const img = octx.createImageData(tile,tile);
+  for(let i=0;i<img.data.length;i+=4){
+    const v = Math.random()*255;
+    img.data[i]=v; img.data[i+1]=v; img.data[i+2]=v; img.data[i+3]=255;
+  }
+  octx.putImageData(img,0,0);
+  const pattern = ctx.createPattern(off,'repeat');
+  ctx.save();
+  ctx.globalAlpha = Math.min(amt/100*0.55, 0.55);
+  ctx.globalCompositeOperation = 'overlay';
+  ctx.fillStyle = pattern;
+  ctx.fillRect(0,0,size,size);
+  ctx.restore();
+}
+
+function drawCanvas(ctx, size){
+  ctx.clearRect(0,0,size,size);
+  drawBackground(ctx, size);
+  let bounds = { x: state.padding, y: state.padding, s: size - 2*state.padding };
+  for(const b of state.borders){
+    if(bounds.s <= 0) break;
+    bounds = drawRing(ctx, bounds, b);
+  }
+  drawCenter(ctx, bounds);
+  drawDecorations(ctx, size);
+  applyGrain(ctx, size);
+}
+
+/* =================== UI: layer list =================== */
+function selectItem(type, id){
+  selection = { type, id };
+  renderAll();
+}
+
+function buildLayerList(){
+  const wrap = document.getElementById('layerList');
+  wrap.innerHTML = '';
+  document.getElementById('layerCount').textContent = state.borders.length + (state.borders.length===1?' border':' borders');
+
+  state.borders.forEach((b, idx)=>{
+    const row = document.createElement('div');
+    row.className = 'layer-row' + (selection.type==='border' && selection.id===b.id ? ' selected':'') + (b.hidden ? ' hidden-layer':'');
+    row.draggable = true;
+    row.dataset.id = b.id;
+    row.innerHTML = `
+      <div class="chip">${b.emoji}</div>
+      <div class="info">
+        <div class="t1">${b.name || ('Border ' + (idx+1))}</div>
+        <div class="t2">${b.size}px · gap ${b.spacing} · ${b.cornerMode}</div>
+      </div>
+      <div class="acts">
+        <button class="icon ghost" data-act="hide" title="Hide/show">${b.hidden?'👁️‍🗨️':'👁️'}</button>
+        <button class="icon ghost" data-act="dup" title="Duplicate">⧉</button>
+        <button class="icon ghost" data-act="del" title="Delete">✕</button>
+      </div>`;
+    row.addEventListener('click', (e)=>{
+      if(e.target.closest('[data-act]')) return;
+      selectItem('border', b.id);
+    });
+    row.querySelector('[data-act="hide"]').addEventListener('click', ()=>{ b.hidden = !b.hidden; pushHistory(); renderAll(); });
+    row.querySelector('[data-act="dup"]').addEventListener('click', ()=>{
+      const copy = JSON.parse(JSON.stringify(b)); copy.id = uid();
+      state.borders.splice(idx+1,0,copy);
+      pushHistory(); selectItem('border', copy.id);
+    });
+    row.querySelector('[data-act="del"]').addEventListener('click', ()=>{
+      state.borders = state.borders.filter(x=>x.id!==b.id);
+      pushHistory(); normalizeSelection(); renderAll();
+    });
+
+    row.addEventListener('dragstart', (e)=>{ e.dataTransfer.setData('text/plain', b.id); });
+    row.addEventListener('dragover', (e)=>{ e.preventDefault(); row.classList.add('dragover'); });
+    row.addEventListener('dragleave', ()=> row.classList.remove('dragover'));
+    row.addEventListener('drop', (e)=>{
+      e.preventDefault(); row.classList.remove('dragover');
+      const draggedId = e.dataTransfer.getData('text/plain');
+      if(draggedId === b.id) return;
+      const fromIdx = state.borders.findIndex(x=>x.id===draggedId);
+      const toIdx = state.borders.findIndex(x=>x.id===b.id);
+      const [moved] = state.borders.splice(fromIdx,1);
+      state.borders.splice(toIdx,0,moved);
+      pushHistory(); renderAll();
+    });
+
+    wrap.appendChild(row);
+  });
+
+  document.getElementById('centerRow').className = 'center-decor-row' + (selection.type==='center'?' selected':'');
+  document.getElementById('decorRow').className = 'center-decor-row' + (selection.type==='decor'?' selected':'');
+  document.getElementById('canvasRow').className = 'center-decor-row' + (selection.type==='canvas'?' selected':'');
+}
+
+/* =================== UI: properties panel =================== */
+function fieldRange(label, val, min, max, step, oninput){
+  const id = 'r'+uid();
+  const el = document.createElement('label'); el.className='field';
+  el.innerHTML = `<div class="field-label"><span>${label}</span><span class="val" id="${id}v">${val}</span></div>
+    <input type="range" id="${id}" min="${min}" max="${max}" step="${step}" value="${val}">`;
+  el.querySelector('input').addEventListener('input', (e)=>{
+    const v = parseFloat(e.target.value);
+    el.querySelector('#'+id+'v').textContent = v;
+    oninput(v);
+  });
+  return el;
+}
+function fieldColor(label, val, oninput){
+  const el = document.createElement('label'); el.className='field';
+  el.innerHTML = `<div class="field-label"><span>${label}</span></div>`;
+  const inp = document.createElement('input'); inp.type='color'; inp.value=val;
+  inp.addEventListener('input', e=>oninput(e.target.value));
+  el.appendChild(inp);
+  return el;
+}
+function fieldToggle(label, val, oninput){
+  const el = document.createElement('div'); el.className='field';
+  el.style.display='flex'; el.style.justifyContent='space-between'; el.style.alignItems='center';
+  el.innerHTML = `<span class="field-label" style="margin-bottom:0">${label}</span>`;
+  const sw = document.createElement('div'); sw.className='toggle-switch'+(val?' on':'');
+  sw.addEventListener('click', ()=>{ const nv = !sw.classList.contains('on'); sw.classList.toggle('on'); oninput(nv); });
+  el.appendChild(sw);
+  return el;
+}
+function fieldSelect(label, val, options, oninput){
+  const el = document.createElement('label'); el.className='field';
+  el.innerHTML = `<div class="field-label"><span>${label}</span></div>`;
+  const sel = document.createElement('select');
+  options.forEach(o=>{
+    const opt = document.createElement('option'); opt.value=o.value; opt.textContent=o.label;
+    if(o.value===val) opt.selected=true;
+    sel.appendChild(opt);
+  });
+  sel.addEventListener('change', e=>oninput(e.target.value));
+  el.appendChild(sel);
+  return el;
+}
+function fieldEmojiPicker(label, val, oninput){
+  const el = document.createElement('label'); el.className='field';
+  el.innerHTML = `<div class="field-label"><span>${label}</span></div>`;
+  const row = document.createElement('div'); row.className='emoji-input-row';
+  const disp = document.createElement('div'); disp.className='emoji-display'; disp.textContent = val || '·';
+  const inp = document.createElement('input'); inp.type='text'; inp.value = val || ''; inp.placeholder='paste any emoji…';
+  inp.addEventListener('input', e=>{ disp.textContent = e.target.value || '·'; oninput(e.target.value); });
+  row.appendChild(disp); row.appendChild(inp);
+  el.appendChild(row);
+  const palette = document.createElement('div'); palette.className='emoji-palette';
+  EMOJI_POOL.forEach(e=>{
+    const b = document.createElement('button'); b.textContent = e;
+    b.addEventListener('click', ()=>{ inp.value = e; disp.textContent = e; oninput(e); });
+    palette.appendChild(b);
+  });
+  el.appendChild(palette);
+  return el;
+}
+
+function buildPropertiesPanel(){
+  const panel = document.getElementById('propPanel');
+  panel.innerHTML = '';
+  const title = document.getElementById('rightTitle');
+
+  if(selection.type === 'border'){
+    const b = state.borders.find(x=>x.id===selection.id);
+    if(!b){ title.textContent='Properties'; panel.innerHTML = `<div class="empty-state">Select a border layer<br>on the left, or add a new one.</div>`; return; }
+    title.textContent = 'Border Layer';
+
+    const sec = document.createElement('div');
+    sec.innerHTML = `<div class="section-title"><span class="dot"></span>${b.name||'Border'} settings</div>`;
+    panel.appendChild(sec);
+
+    panel.appendChild(fieldEmojiPicker('Emoji', b.emoji, v=>{ b.emoji=v; pushHistory(); renderAll(); }));
+
+    const row = document.createElement('div'); row.className='row2';
+    row.appendChild(fieldRange('Size', b.size, 8, 80, 1, v=>{ b.size=v; pushHistory(); drawAndRefreshList(); }));
+    row.appendChild(fieldRange('Spacing', b.spacing, 0, 40, 1, v=>{ b.spacing=v; pushHistory(); drawAndRefreshList(); }));
+    panel.appendChild(row);
+
+    const row2 = document.createElement('div'); row2.className='row2';
+    row2.appendChild(fieldRange('Rotation', b.rotation, 0, 360, 1, v=>{ b.rotation=v; pushHistory(); drawOnly(); }));
+    row2.appendChild(fieldRange('Opacity', b.opacity, 0, 1, 0.01, v=>{ b.opacity=v; pushHistory(); drawOnly(); }));
+    panel.appendChild(row2);
+
+    panel.appendChild(fieldToggle('Pinwheel rotation per side', b.pinwheel, v=>{ b.pinwheel=v; pushHistory(); drawOnly(); }));
+    panel.appendChild(fieldToggle('Alternate / mirror every other', b.alternate, v=>{ b.alternate=v; pushHistory(); drawOnly(); }));
+    panel.appendChild(fieldToggle('Hide layer', b.hidden, v=>{ b.hidden=v; pushHistory(); renderAll(); }));
+
+    panel.appendChild(document.createElement('div')).className='divider';
+
+    const sec2 = document.createElement('div');
+    sec2.innerHTML = `<div class="section-title"><span class="dot" style="background:var(--rose)"></span>Corner behavior</div>`;
+    panel.appendChild(sec2);
+    panel.appendChild(fieldSelect('Corner mode', b.cornerMode, [
+      {value:'repeat',label:'Repeat border emoji'},
+      {value:'single',label:'Single custom emoji'},
+      {value:'mirror',label:'Mirror'},
+      {value:'quarter',label:'Quarter rotation'},
+      {value:'diagonal',label:'Diagonal'},
+    ], v=>{ b.cornerMode=v; pushHistory(); drawOnly(); }));
+    if(b.cornerMode==='single' || b.cornerMode==='diagonal'){
+      panel.appendChild(fieldEmojiPicker('Corner emoji', b.cornerEmoji, v=>{ b.cornerEmoji=v; pushHistory(); drawOnly(); }));
+    }
+  }
+
+  else if(selection.type === 'center'){
+    title.textContent = 'Center Composition';
+    const c = state.center;
+    panel.innerHTML = `<div class="section-title"><span class="dot"></span>Center</div>`;
+    panel.appendChild(fieldSelect('Mode', c.mode, [
+      {value:'single', label:'Single emoji'},
+      {value:'cluster', label:'Emoji cluster'},
+    ], v=>{ c.mode=v; pushHistory(); drawOnly(); }));
+
+    if(c.mode==='single'){
+      panel.appendChild(fieldEmojiPicker('Emoji', c.emoji, v=>{ c.emoji=v; pushHistory(); drawOnly(); }));
+    } else {
+      const wrap = document.createElement('div'); wrap.className='field';
+      wrap.innerHTML = `<div class="field-label"><span>Cluster emojis</span></div>`;
+      const chipList = document.createElement('div'); chipList.className='chip-list';
+      c.clusterEmojis.forEach((e,i)=>{
+        const chip = document.createElement('span'); chip.className='chip-item';
+        chip.innerHTML = `${e} `;
+        const rm = document.createElement('button'); rm.textContent='✕';
+        rm.addEventListener('click', ()=>{ c.clusterEmojis.splice(i,1); pushHistory(); renderAll(); });
+        chip.appendChild(rm);
+        chipList.appendChild(chip);
+      });
+      wrap.appendChild(chipList);
+      const addRow = document.createElement('div'); addRow.style.marginTop='8px';
+      addRow.appendChild(fieldEmojiPicker('Add emoji', '', v=>{ if(v){ c.clusterEmojis.push(v); pushHistory(); renderAll(); } }));
+      wrap.appendChild(addRow);
+      panel.appendChild(wrap);
+    }
+
+    const row = document.createElement('div'); row.className='row2';
+    row.appendChild(fieldRange('Scale', c.scale, 0.2, 2, 0.01, v=>{ c.scale=v; pushHistory(); drawOnly(); }));
+    row.appendChild(fieldRange('Rotation', c.rotation, 0, 360, 1, v=>{ c.rotation=v; pushHistory(); drawOnly(); }));
+    panel.appendChild(row);
+  }
+
+  else if(selection.type === 'decor'){
+    title.textContent = 'Floating Decorations';
+    const d = state.decorations;
+    panel.innerHTML = `<div class="section-title"><span class="dot"></span>Decorations</div>`;
+    panel.appendChild(fieldToggle('Enabled', d.enabled, v=>{ d.enabled=v; pushHistory(); drawOnly(); }));
+
+    const wrap = document.createElement('div'); wrap.className='field';
+    wrap.innerHTML = `<div class="field-label"><span>Decoration emojis</span></div>`;
+    const chipList = document.createElement('div'); chipList.className='chip-list';
+    d.emojis.forEach((e,i)=>{
+      const chip = document.createElement('span'); chip.className='chip-item';
+      chip.innerHTML = `${e} `;
+      const rm = document.createElement('button'); rm.textContent='✕';
+      rm.addEventListener('click', ()=>{ d.emojis.splice(i,1); pushHistory(); renderAll(); });
+      chip.appendChild(rm);
+      chipList.appendChild(chip);
+    });
+    wrap.appendChild(chipList);
+    const addRow = document.createElement('div'); addRow.style.marginTop='8px';
+    addRow.appendChild(fieldEmojiPicker('Add emoji', '', v=>{ if(v){ d.emojis.push(v); pushHistory(); renderAll(); } }));
+    wrap.appendChild(addRow);
+    panel.appendChild(wrap);
+
+    panel.appendChild(fieldRange('Density (count)', d.density, 0, 80, 1, v=>{ d.density=v; pushHistory(); drawOnly(); }));
+    const row = document.createElement('div'); row.className='row2';
+    row.appendChild(fieldRange('Scale', d.scale, 0.2, 2.5, 0.01, v=>{ d.scale=v; pushHistory(); drawOnly(); }));
+    row.appendChild(fieldRange('Opacity', d.opacity, 0, 1, 0.01, v=>{ d.opacity=v; pushHistory(); drawOnly(); }));
+    panel.appendChild(row);
+  }
+
+  else { // canvas
+    title.textContent = 'Canvas & Background';
+    panel.innerHTML = `<div class="section-title"><span class="dot"></span>Canvas</div>`;
+    panel.appendChild(fieldRange('Tile size (px)', state.canvasSize, 400, 1400, 10, v=>{ state.canvasSize=v; pushHistory(); drawOnly(); }));
+    panel.appendChild(fieldRange('Padding', state.padding, 0, 200, 1, v=>{ state.padding=v; pushHistory(); drawOnly(); }));
+    panel.appendChild(fieldRange('Grain intensity', state.grain, 0, 100, 1, v=>{ state.grain=v; pushHistory(); drawOnly(); }));
+
+    panel.appendChild(document.createElement('div')).className='divider';
+    const sec2 = document.createElement('div');
+    sec2.innerHTML = `<div class="section-title"><span class="dot" style="background:var(--teal)"></span>Background</div>`;
+    panel.appendChild(sec2);
+    panel.appendChild(fieldSelect('Type', state.bgType, [
+      {value:'solid', label:'Solid'}, {value:'linear', label:'Linear gradient'}, {value:'radial', label:'Radial gradient'},
+    ], v=>{ state.bgType=v; pushHistory(); drawOnly(); }));
+    const crow = document.createElement('div'); crow.className='row2';
+    crow.appendChild(fieldColor('Color 1', state.bgColor1, v=>{ state.bgColor1=v; pushHistory(); drawOnly(); }));
+    if(state.bgType!=='solid') crow.appendChild(fieldColor('Color 2', state.bgColor2, v=>{ state.bgColor2=v; pushHistory(); drawOnly(); }));
+    panel.appendChild(crow);
+    if(state.bgType==='linear'){
+      panel.appendChild(fieldRange('Angle', state.bgAngle, 0, 360, 1, v=>{ state.bgAngle=v; pushHistory(); drawOnly(); }));
+    }
+
+    panel.appendChild(document.createElement('div')).className='divider';
+    const sec3 = document.createElement('div');
+    sec3.innerHTML = `<div class="section-title"><span class="dot" style="background:var(--rose)"></span>Pattern presets</div>`;
+    panel.appendChild(sec3);
+    const grid = document.createElement('div'); grid.className='preset-grid';
+    Object.entries(PRESETS).forEach(([key,p])=>{
+      const btn = document.createElement('button'); btn.className='preset-btn';
+      btn.innerHTML = `<span class="pe">${p.pe}</span>${p.label}`;
+      btn.addEventListener('click', ()=>applyPreset(key));
+      grid.appendChild(btn);
+    });
+    panel.appendChild(grid);
+  }
+}
+
+function applyPreset(key){
+  const p = PRESETS[key];
+  if(!p) return;
+  state.borders = p.borders.map(b=>Object.assign({}, b, {id:uid()}));
+  if(p.center) state.center = Object.assign({}, state.center, JSON.parse(JSON.stringify(p.center)));
+  pushHistory();
+  selection = { type:'border', id: state.borders[0].id };
+  renderAll();
+}
+
+/* =================== render orchestration =================== */
+function drawOnly(){
+  const canvas = document.getElementById('mainCanvas');
+  canvas.width = state.canvasSize; canvas.height = state.canvasSize;
+  drawCanvas(canvas.getContext('2d'), state.canvasSize);
+}
+function drawAndRefreshList(){
+  drawOnly();
+  buildLayerList();
+}
+function renderAll(){
+  drawOnly();
+  buildLayerList();
+  buildPropertiesPanel();
+}
+
+/* =================== randomize =================== */
+function randomizeAll(){
+  state.seed = Math.floor(Math.random()*1000000);
+  const rng = mulberry32(state.seed);
+  const cornerModes = ['repeat','single','mirror','quarter','diagonal'];
+  state.borders.forEach(b=>{
+    b.emoji = pick(rng, EMOJI_POOL);
+    b.size = 16 + Math.floor(rng()*28);
+    b.spacing = 2 + Math.floor(rng()*10);
+    b.rotation = Math.floor(rng()*4)*90;
+    b.pinwheel = rng() > 0.6;
+    b.alternate = rng() > 0.7;
+    b.cornerMode = pick(rng, cornerModes);
+    if(b.cornerMode==='single' || b.cornerMode==='diagonal') b.cornerEmoji = pick(rng, EMOJI_POOL);
+  });
+  state.center.emoji = pick(rng, EMOJI_POOL);
+  pushHistory();
+  renderAll();
+}
+
+/* =================== export / save / load =================== */
+function exportPNG(){
+  const scale = parseInt(document.getElementById('exportScale').value, 10);
+  const size = state.canvasSize * scale;
+  const off = document.createElement('canvas'); off.width = size; off.height = size;
+  const octx = off.getContext('2d');
+  octx.scale(scale, scale);
+  drawCanvas(octx, state.canvasSize);
+  off.toBlob(blob=>{
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'tile-loom-' + Date.now() + '.png';
+    a.click();
+  });
+}
+function saveJSON(){
+  const blob = new Blob([JSON.stringify(state, null, 2)], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'tile-preset.json';
+  a.click();
+}
+function loadJSONFile(file){
+  const reader = new FileReader();
+  reader.onload = e=>{
+    try{
+      const parsed = JSON.parse(e.target.result);
+      state = Object.assign(defaultState(), parsed);
+      normalizeSelection();
+      pushHistory();
+      renderAll();
+    }catch(err){ alert('Could not read that preset file.'); }
+  };
+  reader.readAsText(file);
+}
+
+/* =================== wire up top bar =================== */
+document.getElementById('addBorderBtn').addEventListener('click', ()=>{
+  const b = defaultBorder(pick(mulberry32(Date.now()%100000), EMOJI_POOL));
+  state.borders.push(b);
+  pushHistory();
+  selectItem('border', b.id);
+});
+document.getElementById('centerRow').addEventListener('click', ()=>selectItem('center'));
+document.getElementById('decorRow').addEventListener('click', ()=>selectItem('decor'));
+document.getElementById('canvasRow').addEventListener('click', ()=>selectItem('canvas'));
+document.getElementById('randomizeBtn').addEventListener('click', randomizeAll);
+document.getElementById('exportBtn').addEventListener('click', exportPNG);
+document.getElementById('savePresetBtn').addEventListener('click', saveJSON);
+document.getElementById('loadPresetBtn').addEventListener('click', ()=>document.getElementById('fileInput').click());
+document.getElementById('fileInput').addEventListener('change', e=>{ if(e.target.files[0]) loadJSONFile(e.target.files[0]); });
+document.getElementById('undoBtn').addEventListener('click', undo);
+document.getElementById('redoBtn').addEventListener('click', redo);
+window.addEventListener('keydown', e=>{
+  if((e.ctrlKey||e.metaKey) && e.key==='z' && !e.shiftKey){ e.preventDefault(); undo(); }
+  if((e.ctrlKey||e.metaKey) && (e.key==='y' || (e.key==='z'&&e.shiftKey))){ e.preventDefault(); redo(); }
+});
+
+/* =================== init =================== */
+renderAll();
+updateUndoRedoBtns();
+</script>
+</body>
+</html>
