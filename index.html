@@ -337,6 +337,23 @@ const EMOJI_POOL = ["🟩","🟦","🟥","🟨","🟪","◻️","◼️","⬛","
 
 const DECOR_DEFAULTS = ["✨","⭐","🌙"];
 
+function defaultBorder(emoji, overrides){
+  return Object.assign({
+    id: uid(),
+    name: "",
+    emoji: emoji || "🟩",
+    cornerEmoji: "",
+    size: 32,
+    spacing: 4,
+    rotation: 0,
+    opacity: 1,
+    cornerMode: "repeat", // repeat | single | mirror | quarter | diagonal
+    pinwheel: false,
+    alternate: false,
+    hidden: false,
+  }, overrides || {});
+}
+
 function defaultState(){
   return {
     canvasSize: 800,
@@ -348,11 +365,11 @@ function defaultState(){
     grain: 12,
     seed: 4242,
     borders: [
-      defaultBorder("🍇", {size:30, spacing:4}),
-      defaultBorder("🦜", {size:26, spacing:5, cornerMode:"single", cornerEmoji:"✨"}),
+      defaultBorder("🟩", {size:30, spacing:4}),
+      defaultBorder("🌸", {size:26, spacing:5, cornerMode:"single", cornerEmoji:"✨"}),
       defaultBorder("◻️", {size:22, spacing:6}),
     ],
-    center: { mode:"single", emoji:"🌼", clusterEmojis:["🌙","⭐","✨","🌟"], scale:1, rotation:0 },
+    center: { mode:"single", emoji:"✨", clusterEmojis:["🌙","⭐","✨","🌟"], scale:1, rotation:0 },
     decorations: { enabled:false, emojis:[...DECOR_DEFAULTS], density:18, scale:1, opacity:0.35 },
   };
 }
