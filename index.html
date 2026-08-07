@@ -358,37 +358,17 @@ function defaultState(){
   return {
    canvasSize: 800,
 padding: 120,
-
 bgType: "radial",
 bgColor1: "#FFF8F6",
 bgColor2: "#F5DCEB",
 bgAngle: 45,
-
-grain: 22,
+grain: 18,
 seed: 4242,
-
 borders: [
-  defaultBorder("🌸", {
-    size: 30,
-    spacing: 4
-  }),
-
-  defaultBorder("✨", {
-    size: 26,
-    spacing: 5,
-    cornerMode: "single",
-    cornerEmoji: "🩷"
-  }),
-
-  defaultBorder("🌿", {
-    size: 22,
-    spacing: 6
-  }),
-
-  defaultBorder("🩷", {
-    size: 18,
-    spacing: 4,
-    pinwheel: true
+  defaultBorder("🌸", {size:30, spacing:4}),
+  defaultBorder("✨", {size:26, spacing:5, cornerMode:"single", cornerEmoji:"🩷"}),
+  defaultBorder("🌿", {size:22, spacing:6}),
+],
   }),
 ],
     ],
