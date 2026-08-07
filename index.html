@@ -356,18 +356,41 @@ function defaultBorder(emoji, overrides){
 
 function defaultState(){
   return {
-    canvasSize: 800,
-    padding: 36,
-    bgType: "radial", // solid | linear | radial
-    bgColor1: "#2a1730",
-    bgColor2: "#150f1a",
-    bgAngle: 45,
-    grain: 12,
-    seed: 4242,
-    borders: [
-      defaultBorder("🟩", {size:30, spacing:4}),
-      defaultBorder("🌸", {size:26, spacing:5, cornerMode:"single", cornerEmoji:"✨"}),
-      defaultBorder("◻️", {size:22, spacing:6}),
+   canvasSize: 800,
+padding: 120,
+
+bgType: "radial",
+bgColor1: "#FFF8F6",
+bgColor2: "#F5DCEB",
+bgAngle: 45,
+
+grain: 22,
+seed: 4242,
+
+borders: [
+  defaultBorder("🌸", {
+    size: 30,
+    spacing: 4
+  }),
+
+  defaultBorder("✨", {
+    size: 26,
+    spacing: 5,
+    cornerMode: "single",
+    cornerEmoji: "🩷"
+  }),
+
+  defaultBorder("🌿", {
+    size: 22,
+    spacing: 6
+  }),
+
+  defaultBorder("🩷", {
+    size: 18,
+    spacing: 4,
+    pinwheel: true
+  }),
+],
     ],
     center: { mode:"single", emoji:"✨", clusterEmojis:["🌙","⭐","✨","🌟"], scale:1, rotation:0 },
     decorations: { enabled:false, emojis:[...DECOR_DEFAULTS], density:18, scale:1, opacity:0.35 },
